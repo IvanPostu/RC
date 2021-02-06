@@ -1,4 +1,3 @@
-
 package com.ivan.rc;
 
 import com.ivan.rc.configuration.Log4jConfiguration;
@@ -11,16 +10,19 @@ import org.apache.logging.log4j.Logger;
  * @author ivan
  */
 public class Main {
-    
-    static{
+
+    static {
         Log4jConfiguration.configure();
     }
-    
+
     private static final Logger logger = LogManager.getLogger(Main.class);
-    
+
     public static void main(String[] args) {
-        logger.info("Run program!!!");
-        LabOneRunner.run();
+        logger.info("Run main program!!!");
+
+        LabOneRunner runner = new LabOneRunner();
+        runner.run();
+
     }
-    
+
 }

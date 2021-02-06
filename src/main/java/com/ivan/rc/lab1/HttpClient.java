@@ -12,6 +12,9 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -19,9 +22,10 @@ import java.net.UnknownHostException;
  */
 public class HttpClient {
 
+    private static final Logger logger = LogManager.getLogger(HttpClient.class);
     private static final int PORT = 80;
 
-    public byte[] doGetRequest(String host, String relativePath) {
+    public Optional<byte[]> doGetRequest(String host, String relativePath) {
 
         try (Socket socket = new Socket(InetAddress.getByName(host), PORT)) {
 
@@ -43,14 +47,14 @@ public class HttpClient {
             byte[] result = buffer.toByteArray();
             buffer.flush();
 
-            return result;
+            return Optional.ofNullable(result);
         } catch (UnknownHostException ex) {
-            System.out.println("Server not found: " + ex.getMessage());
+            logger.warn("Server not found: {}", ex.getMessage());
         } catch (IOException ex) {
-            System.out.println("I/O error: " + ex.getMessage());
+            logger.warn("I/O error: {}", ex.getMessage());
         }
 
-        return null;
+        return Optional.ofNullable(null);
     }
 
     public byte[] getBody(byte[] data) {
@@ -80,6 +84,7 @@ public class HttpClient {
             return result;
 
         } catch (IndexOutOfBoundsException e) {
+            logger.error(e);
         }
 
         return data;
