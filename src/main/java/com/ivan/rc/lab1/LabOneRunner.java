@@ -6,21 +6,22 @@
 package com.ivan.rc.lab1;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 /**
  *
  * @author ivan
  */
-public class Main {
+public class LabOneRunner {
 
     private static final String UTM_URL = "me.utm.md";
 
-    public static void main(String[] args) {
+    public static void run() {
         HttpClient httpClient = new HttpClient();
 
         try {
-//            byte[] res = httpClient.doGetRequest(UTM_URL, "");
+//            byte[] res = httpClient.doGetRequest(UTM_URL, "/");
 //            String html = new String(res);
 //
 //            List<String> imageLinks = new Utils()
@@ -28,16 +29,12 @@ public class Main {
 //                            new String[] {"png", "JPG", "gif"});
 
             FileWorker fw = new FileWorker();
-            
-//            
 
-            byte[] img = httpClient
+            byte[] imgResponse = httpClient
                     .doGetRequest(UTM_URL, "/img/europractice.png");
-//            
-//            fw.writeFile("europractice.png", img, true);
-            char c = 'a';
-        } catch (Exception e) {
-            e.printStackTrace();
+            byte[] imgData = httpClient.getBody(imgResponse);
+            fw.writeFile("zeuropractice.png", imgData, true);
+        } catch (IOException e) {
         }
     }
 
