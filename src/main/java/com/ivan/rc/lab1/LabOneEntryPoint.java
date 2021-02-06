@@ -10,32 +10,35 @@ import org.apache.logging.log4j.Logger;
  */
 public class LabOneEntryPoint {
 
-    private static final String UTM_URL = "me.utm.md";
+    private static final String[] URLS = new String[] {"http://me.utm.md", "https://utm.md"};
+    private static final String[] IMAGE_EXTENSIONS = new String[] {"png", "JPG", "gif"};
     private static final Logger logger = LogManager.getLogger(LabOneEntryPoint.class);
 
-    private String extractHtmlFromUrl(String url, HttpClient httpClient) {
-        byte[] res = httpClient.doGetRequest(url, "").orElseThrow(() -> {
-            String errMsg = "Error on request ";
-            return new RuntimeException(errMsg);
-        });
+    private String doRequestAndExtractHtml(String url) {
+        HttpClient httpClient = new CustomHttpClientImpl(url, "");
+        httpClient.doGetRequest();
 
+        byte[] res = httpClient.getBody();
         String html = new String(res);
-
-        logger.info("HTML downloaded with success.");
+        logger.info("HTML document for website: {} downloaded with success.", url);
 
         return html;
     }
 
     public void run() {
-        HttpClient httpClient = new HttpClient();
-        String html = extractHtmlFromUrl(UTM_URL, httpClient);
 
-        List<String> imageLinks =
-                new Utils().extractImageLinksFromHtml(html, new String[] {"png", "JPG", "gif"});
 
-        DownloadWorker downloadWorker = new DownloadWorker(imageLinks, httpClient, UTM_URL);
-        downloadWorker.run();
+        for (String url : URLS) {
+            String html = doRequestAndExtractHtml(url);
 
+            List<String> imageLinks = ImageLinkExtractor.extractImageRelativeLinksFromHtml(html,
+                    IMAGE_EXTENSIONS, url);
+
+            DownloadWorker downloadWorker = new DownloadWorker(imageLinks, url);
+            downloadWorker.run();
+        }
+
+        // logger.info("Program finished!!!");
     }
 
 }

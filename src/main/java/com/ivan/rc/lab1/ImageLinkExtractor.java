@@ -9,11 +9,12 @@ import java.util.regex.Pattern;
  *
  * @author ivan
  */
-public class Utils {
+public class ImageLinkExtractor {
 
-    private static final String IMG_REGEXP = "<img\\s+[^>]" + "*src=\"([^\"]*)\"[^>]*>";
+    private static final String IMG_REGEXP = "<img\\s+[^>]*src=\"([^\"]*)\"[^>]*>";
 
-    public List<String> extractImageLinksFromHtml(String html, String[] imageExtensions) {
+    public static List<String> extractImageRelativeLinksFromHtml(String html,
+            String[] imageExtensions, String websiteUrl) {
 
         List<String> result = new LinkedList<>();
         Pattern p = Pattern.compile(IMG_REGEXP);
@@ -23,9 +24,27 @@ public class Utils {
             // String fullImgTag = m.group();
             String imgSrc = m.group(1);
 
+            /**
+             * Exclude base64 image
+             */
+            if (imgSrc.contains("data:image"))
+                continue;
+
             for (int i = 0; i < imageExtensions.length; i++) {
                 String imageExtension = imageExtensions[i];
+
+
+
                 if (imgSrc.toLowerCase().contains(imageExtension.toLowerCase())) {
+
+                    /**
+                     * Convert absolute path to relative
+                     */
+                    if (imgSrc.startsWith(websiteUrl + '/')) {
+                        imgSrc = imgSrc.replace(websiteUrl + '/', "");
+                    }
+
+
                     result.add(imgSrc);
                     break;
                 }
