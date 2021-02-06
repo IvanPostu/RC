@@ -1,7 +1,7 @@
 package com.ivan.rc;
 
 import com.ivan.rc.configuration.Log4jConfiguration;
-import com.ivan.rc.lab1.LabOneRunner;
+import com.ivan.rc.lab1.LabOneEntryPoint;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,7 +20,7 @@ public class Main {
     public static void main(String[] args) {
         logger.info("Run main program!!!");
 
-        LabOneRunner runner = new LabOneRunner();
+        LabOneEntryPoint runner = new LabOneEntryPoint();
         runner.run();
 
     }

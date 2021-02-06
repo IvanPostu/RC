@@ -1,7 +1,6 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * To change this license header, choose License Headers in Project Properties. To change this
+ * template file, choose Tools | Templates and open the template in the editor.
  */
 package com.ivan.rc.lab1;
 
@@ -63,10 +62,8 @@ public class HttpClient {
         try {
             int i = 0;
             for (i = 0; i < data.length; i++, count--) {
-                if (data[i] == (byte) '\r'
-                        && data[i + 1] == (byte) '\n'
-                        && data[i + 2] == (byte) '\r'
-                        && data[i + 3] == (byte) '\n') {
+                if (data[i] == (byte) '\r' && data[i + 1] == (byte) '\n'
+                        && data[i + 2] == (byte) '\r' && data[i + 3] == (byte) '\n') {
                     count -= 4;
                     i += 4;
                     break;
@@ -74,7 +71,6 @@ public class HttpClient {
 
             }
 
-            char c = 'a';
             byte[] result = new byte[count];
 
             for (int j = 0; j < result.length; j++) {

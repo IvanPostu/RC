@@ -11,27 +11,25 @@ import java.util.regex.Pattern;
  */
 public class Utils {
 
-    private static final String IMG_REGEXP = "<img\\s+[^>]"
-            + "*src=\"([^\"]*)\"[^>]*>";
+    private static final String IMG_REGEXP = "<img\\s+[^>]" + "*src=\"([^\"]*)\"[^>]*>";
 
-    public List<String> extractImageLinksFromHtml(String html,
-            String[] imageExtensions) {
+    public List<String> extractImageLinksFromHtml(String html, String[] imageExtensions) {
 
         List<String> result = new LinkedList<>();
         Pattern p = Pattern.compile(IMG_REGEXP);
         Matcher m = p.matcher(html);
 
         while (m.find()) {
-            String fullImgTag = m.group();
+            // String fullImgTag = m.group();
             String imgSrc = m.group(1);
-            
+
             for (int i = 0; i < imageExtensions.length; i++) {
                 String imageExtension = imageExtensions[i];
-                if(imgSrc.toLowerCase().contains(imageExtension.toLowerCase())){
+                if (imgSrc.toLowerCase().contains(imageExtension.toLowerCase())) {
                     result.add(imgSrc);
                     break;
                 }
-                
+
             }
         }
 
