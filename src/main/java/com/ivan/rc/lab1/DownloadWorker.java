@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -14,12 +15,13 @@ import org.apache.logging.log4j.Logger;
  */
 public class DownloadWorker {
 
-    private static final Logger logger = LogManager.getLogger(DownloadWorker.class);
-    private static final ExecutorService threadPool = Executors.newFixedThreadPool(4);
+    private static final Logger LOGGER = LogManager.getLogger(DownloadWorker.class);
+    private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(4);
+    private static final Semaphore SEMAPHORE = new Semaphore(2);
 
-    private List<String> downloadUrls;
-    private HttpClient httpClient;
-    private String websiteUrl;
+    private final List<String> downloadUrls;
+    private final HttpClient httpClient;
+    private final String websiteUrl;
 
     public DownloadWorker(List<String> downloadUrls, HttpClient httpClient, String websiteUrl) {
         this.downloadUrls = Collections.synchronizedList(downloadUrls);
@@ -28,12 +30,12 @@ public class DownloadWorker {
     }
 
     public void run() {
-        threadPool.submit(new MyRunnable(downloadUrls, httpClient, websiteUrl));
-        threadPool.submit(new MyRunnable(downloadUrls, httpClient, websiteUrl));
-        threadPool.submit(new MyRunnable(downloadUrls, httpClient, websiteUrl));
-        threadPool.submit(new MyRunnable(downloadUrls, httpClient, websiteUrl));
+        THREAD_POOL.submit(new MyRunnable(downloadUrls, httpClient, websiteUrl));
+        THREAD_POOL.submit(new MyRunnable(downloadUrls, httpClient, websiteUrl));
+        THREAD_POOL.submit(new MyRunnable(downloadUrls, httpClient, websiteUrl));
+        THREAD_POOL.submit(new MyRunnable(downloadUrls, httpClient, websiteUrl));
 
-        threadPool.shutdown();
+        THREAD_POOL.shutdown();
 
     }
 
@@ -42,33 +44,49 @@ public class DownloadWorker {
         private List<String> downloadUrls;
         private HttpClient httpClient;
         private String websiteUrl;
+        private FileWorker fileWorker;
 
         MyRunnable(List<String> downloadUrls, HttpClient httpClient, String websiteUrl) {
             this.downloadUrls = downloadUrls;
             this.httpClient = httpClient;
             this.websiteUrl = websiteUrl;
+            this.fileWorker = new FileWorker();
         }
 
         @Override
         public void run() {
             while (!downloadUrls.isEmpty()) {
+                String link = downloadUrls.remove(0);
+                String filename = link.replace('/', '_');
+
                 try {
-                    String link = '/' + downloadUrls.remove(0);
-                    FileWorker fw = new FileWorker();
 
-                    try {
-                        logger.info("Start file download: {}", link);
-                        byte[] imgResponse = httpClient.doGetRequest(websiteUrl, link)
-                                .orElseThrow(() -> new RuntimeException());
+                    LOGGER.info("NETWORK: Start downloading {} file.", filename);
 
-                        byte[] imgData = httpClient.getBody(imgResponse);
-                        fw.writeFile(link.replace('/', '_'), imgData, true);
-                        logger.info("Success file download: {}", link);
-                    } catch (RuntimeException e) {
-                        logger.error("Error while downloading file: {}", link);
-                    }
-                } catch (IndexOutOfBoundsException e) {
-                } catch (IOException e) {
+                    byte[] imgResponse = httpClient.doGetRequest(websiteUrl, link)
+                            .orElseThrow(() -> new RuntimeException());
+
+                    LOGGER.info("NETWORK: Finish downloading {} file.", link);
+
+                    byte[] imgData = httpClient.getBody(imgResponse);
+
+                    SEMAPHORE.acquire();
+
+                    LOGGER.info("FILESYSTEM: Start save to disk {} file, semaphore count={}",
+                            filename, SEMAPHORE.availablePermits());
+
+                    fileWorker.writeFile(filename, imgData, true);
+
+                    SEMAPHORE.release();
+
+                    LOGGER.info("FILESYSTEM: Finish save to disk {} file, semaphore count={}",
+                            filename, SEMAPHORE.availablePermits());
+
+
+
+                } catch (IOException | InterruptedException | RuntimeException e) {
+                    LOGGER.error("Error while downloading file: {}", link);
+
                 }
             }
         }

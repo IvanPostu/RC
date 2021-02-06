@@ -29,7 +29,7 @@ public class HttpClient {
         try (Socket socket = new Socket(InetAddress.getByName(host), PORT)) {
 
             PrintWriter pw = new PrintWriter(socket.getOutputStream());
-            pw.print("GET " + relativePath + " HTTP/1.1\r\n");
+            pw.print("GET " + '/' + relativePath + " HTTP/1.1\r\n");
             pw.print("User-Agent: Simple Http Client\r\n");
             pw.print(String.format("Host: " + host + ":80\r\n\r\n"));
             pw.flush();

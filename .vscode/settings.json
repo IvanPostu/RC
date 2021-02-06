@@ -83,7 +83,7 @@
   "editor.codeLens": true,
   "editor.cursorBlinking": "smooth",
   "editor.cursorStyle": "line",
-  "editor.fontSize": 13,
+  "editor.fontSize": 14,
   "editor.fontFamily": "'Fira Code Medium', 'Consolas', monospace, 'Droid Sans Fallback'",
   "editor.fontLigatures": true,
   "editor.formatOnSave": false,

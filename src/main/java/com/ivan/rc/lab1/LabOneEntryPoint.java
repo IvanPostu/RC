@@ -14,7 +14,7 @@ public class LabOneEntryPoint {
     private static final Logger logger = LogManager.getLogger(LabOneEntryPoint.class);
 
     private String extractHtmlFromUrl(String url, HttpClient httpClient) {
-        byte[] res = httpClient.doGetRequest(url, "/").orElseThrow(() -> {
+        byte[] res = httpClient.doGetRequest(url, "").orElseThrow(() -> {
             String errMsg = "Error on request ";
             return new RuntimeException(errMsg);
         });
