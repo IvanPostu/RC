@@ -16,37 +16,46 @@ import org.apache.logging.log4j.Logger;
 public class DownloadWorker {
 
     private static final Logger LOGGER = LogManager.getLogger(DownloadWorker.class);
-    private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(4);
-    private static final Semaphore SEMAPHORE = new Semaphore(2);
 
-    private final List<String> downloadUrls;
-    private final String websiteUrl;
+    private final ExecutorService threadPool;
+    private final Semaphore semaphore;
 
-    public DownloadWorker(List<String> downloadUrls, String websiteUrl) {
-        this.downloadUrls = Collections.synchronizedList(downloadUrls);
-        this.websiteUrl = websiteUrl;
+    private static final DownloadWorker DOWNLOAD_WORKER = new DownloadWorker();
+
+    public static DownloadWorker getInstance() {
+        return DOWNLOAD_WORKER;
     }
 
-    public void run() {
-        THREAD_POOL.submit(new MyRunnable(downloadUrls, websiteUrl));
-        THREAD_POOL.submit(new MyRunnable(downloadUrls, websiteUrl));
-        THREAD_POOL.submit(new MyRunnable(downloadUrls, websiteUrl));
-        THREAD_POOL.submit(new MyRunnable(downloadUrls, websiteUrl));
-
-        // THREAD_POOL.shutdown();
-
+    private DownloadWorker() {
+        this.threadPool = Executors.newFixedThreadPool(4);
+        this.semaphore = new Semaphore(2);
     }
 
-    private class MyRunnable implements Runnable {
+    public void run(String websiteUrl, List<String> downloadUrls) {
+        List<String> threadSafeDownloadUrls = Collections.synchronizedList(downloadUrls);
+
+        threadPool.submit(new DownloadRunnable(threadSafeDownloadUrls, websiteUrl, semaphore));
+        threadPool.submit(new DownloadRunnable(threadSafeDownloadUrls, websiteUrl, semaphore));
+        threadPool.submit(new DownloadRunnable(threadSafeDownloadUrls, websiteUrl, semaphore));
+        threadPool.submit(new DownloadRunnable(threadSafeDownloadUrls, websiteUrl, semaphore));
+    }
+
+    public void shutDown() {
+        threadPool.shutdown();
+    }
+
+    private class DownloadRunnable implements Runnable {
 
         private List<String> downloadUrls;
         private String websiteUrl;
         private FileWorker fileWorker;
+        private Semaphore semaphore;
 
-        MyRunnable(List<String> downloadUrls, String websiteUrl) {
+        DownloadRunnable(List<String> downloadUrls, String websiteUrl, Semaphore semaphore) {
             this.downloadUrls = downloadUrls;
             this.websiteUrl = websiteUrl;
             this.fileWorker = new FileWorker();
+            this.semaphore = semaphore;
         }
 
         @Override
@@ -64,16 +73,16 @@ public class DownloadWorker {
                     LOGGER.info("NETWORK: Finish downloading {} file.", link);
 
 
-                    SEMAPHORE.acquire();
+                    semaphore.acquire();
                     LOGGER.info("FILESYSTEM: Start save to disk {} file, semaphore count={}",
-                            filename, SEMAPHORE.availablePermits());
+                            filename, semaphore.availablePermits());
                     fileWorker.writeFile(filename, imgData, true);
-                    SEMAPHORE.release();
+                    semaphore.release();
 
                     LOGGER.info("FILESYSTEM: Finish save to disk {} file, semaphore count={}",
-                            filename, SEMAPHORE.availablePermits());
+                            filename, semaphore.availablePermits());
                 } catch (IOException | InterruptedException | RuntimeException e) {
-                    LOGGER.error("Error while downloading file: {}", link);
+                    LOGGER.error(e);
 
                 }
             }

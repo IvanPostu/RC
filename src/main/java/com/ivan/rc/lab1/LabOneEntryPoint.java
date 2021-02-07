@@ -10,9 +10,10 @@ import org.apache.logging.log4j.Logger;
  */
 public class LabOneEntryPoint {
 
+    // "http://me.utm.md", "https://utm.md"
     private static final String[] URLS = new String[] {"http://me.utm.md", "https://utm.md"};
     private static final String[] IMAGE_EXTENSIONS = new String[] {"png", "JPG", "gif"};
-    private static final Logger logger = LogManager.getLogger(LabOneEntryPoint.class);
+    private static final Logger LOG = LogManager.getLogger(LabOneEntryPoint.class);
 
     private String doRequestAndExtractHtml(String url) {
         HttpClient httpClient = new CustomHttpClientImpl(url, "");
@@ -20,13 +21,14 @@ public class LabOneEntryPoint {
 
         byte[] res = httpClient.getBody();
         String html = new String(res);
-        logger.info("HTML document for website: {} downloaded with success.", url);
+        LOG.info("HTML document for website: {} downloaded with success.", url);
 
         return html;
     }
 
     public void run() {
 
+        DownloadWorker downloadWorker = DownloadWorker.getInstance();
 
         for (String url : URLS) {
             String html = doRequestAndExtractHtml(url);
@@ -34,11 +36,11 @@ public class LabOneEntryPoint {
             List<String> imageLinks = ImageLinkExtractor.extractImageRelativeLinksFromHtml(html,
                     IMAGE_EXTENSIONS, url);
 
-            DownloadWorker downloadWorker = new DownloadWorker(imageLinks, url);
-            downloadWorker.run();
+            downloadWorker.run(url, imageLinks);
         }
 
-        // logger.info("Program finished!!!");
+        downloadWorker.shutDown();
+
     }
 
 }
