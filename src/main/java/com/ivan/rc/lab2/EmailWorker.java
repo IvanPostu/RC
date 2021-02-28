@@ -8,25 +8,50 @@ package com.ivan.rc.lab2;
 import java.io.File;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
 import javax.activation.FileDataSource;
 import javax.mail.Authenticator;
+import javax.mail.Flags;
+import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
+import javax.mail.Store;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import javax.mail.search.FlagTerm;
 
 /**
  *
  * @author ivan
  */
 public class EmailWorker {
+
+    public Message[] fetchMessages() {
+
+        Session session = Session.getDefaultInstance(new Properties());
+
+        try {
+            Store store = session.getStore("imaps");
+            store.connect("imap.googlemail.com", 993, LoginState.email, LoginState.password);
+            Folder inbox = store.getFolder("INBOX");
+            inbox.open(Folder.READ_ONLY);
+            Message[] messages = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
+            System.out.println("FEtch messages with success");
+            return messages;
+        } catch (MessagingException ex) {
+            System.out.println(ex.getMessage());
+        }
+
+        return null;
+    }
 
     public void sendMail(String recipient, final String title, final String text, List<File> attachmentFiles) {
         sendMailInternal(recipient, title, text, attachmentFiles);
