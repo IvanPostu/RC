@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.JOptionPane;
 import javax.swing.Timer;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -22,7 +23,6 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import sun.misc.IOUtils;
@@ -54,9 +54,17 @@ public class LoginPanel extends javax.swing.JPanel {
         this.t.start();
         requestThread = new Thread(() -> {
             this.isFetch = true;
+            Authentication.getInstance().setAuthenticated(false);
             String preLoginCookie = preLoginRequest();
             loginRequest(loginField.getText(), passwordField.getText(), preLoginCookie);
             this.isFetch = false;
+            if(Authentication.getInstance().isAuthenticated()){
+                JOptionPane.showMessageDialog(this.getParent(),
+                    "Autentificare a avut loc cu success", "Succes auth", JOptionPane.INFORMATION_MESSAGE);
+            }else{
+                JOptionPane.showMessageDialog(this.getParent(),
+                    "Autentificare a avut loc cu eroare", "Error auth", JOptionPane.WARNING_MESSAGE);                
+            }
         });
     }
 
@@ -132,7 +140,7 @@ public class LoginPanel extends javax.swing.JPanel {
 
             String body = String.format("login=%s&pass=%s&action=login", username, password);
             StringEntity stringEntity = new StringEntity(body);
-            
+
             HttpUriRequest request = RequestBuilder.post()
                     .setEntity(stringEntity)
                     .setUri("http://club.chateg.ru/index.php")
@@ -145,19 +153,19 @@ public class LoginPanel extends javax.swing.JPanel {
             ResponseHandler<Integer> responseHandler = response -> {
                 int status = response.getStatusLine().getStatusCode();
                 if (status == 302) {
-                    
-                    
+
                     Header cookie = response.getLastHeader("Set-Cookie");
-                    logger.info("Success login request {}", cookie); 
-                      
+                    logger.info("Success login request {}", cookie);
+
                     Authentication.getInstance().setCookie(cookie.getValue());
                     Authentication.getInstance().setAuthenticated(true);
+
                     return 1;
                 } else {
                     throw new ClientProtocolException("Unexpected response status: " + status);
                 }
             };
-            
+
             httpclient.execute(request, responseHandler);
 
         } catch (IOException ex) {
