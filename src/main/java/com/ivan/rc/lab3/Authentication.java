@@ -30,6 +30,7 @@ public class Authentication {
 
     public void setCookie(String cookie) {
         this.cookie = cookie;
+        
     }
 
     public boolean isAuthenticated() {

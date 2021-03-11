@@ -58,12 +58,12 @@ public class LoginPanel extends javax.swing.JPanel {
             String preLoginCookie = preLoginRequest();
             loginRequest(loginField.getText(), passwordField.getText(), preLoginCookie);
             this.isFetch = false;
-            if(Authentication.getInstance().isAuthenticated()){
+            if (Authentication.getInstance().isAuthenticated()) {
                 JOptionPane.showMessageDialog(this.getParent(),
-                    "Autentificare a avut loc cu success", "Succes auth", JOptionPane.INFORMATION_MESSAGE);
-            }else{
+                        "Autentificare a avut loc cu success", "Succes auth", JOptionPane.INFORMATION_MESSAGE);
+            } else {
                 JOptionPane.showMessageDialog(this.getParent(),
-                    "Autentificare a avut loc cu eroare", "Error auth", JOptionPane.WARNING_MESSAGE);                
+                        "Autentificare a avut loc cu eroare", "Error auth", JOptionPane.WARNING_MESSAGE);
             }
         });
     }
@@ -154,11 +154,32 @@ public class LoginPanel extends javax.swing.JPanel {
                 int status = response.getStatusLine().getStatusCode();
                 if (status == 302) {
 
-                    Header cookie = response.getLastHeader("Set-Cookie");
-                    logger.info("Success login request {}", cookie);
+                    Header[] headers = response.getAllHeaders();
 
-                    Authentication.getInstance().setCookie(cookie.getValue());
-                    Authentication.getInstance().setAuthenticated(true);
+                    for (Header h : headers) {
+
+                        if (h.getName().equals("Set-Cookie")) {
+
+                            String cooki = h.getValue().split(";")[0];
+                            logger.info("Cookie: {}", cooki);
+
+                            Authentication.getInstance().setAuthenticated(true);
+
+                            if (Authentication.getInstance().getCookie().equals("")) {
+                                Authentication.getInstance().setCookie(
+                                        cooki
+                                );
+                            } else {
+                                Authentication.getInstance().setCookie(
+                                        Authentication.getInstance().getCookie() + "; " + cooki
+                                );
+                            }
+
+                        }
+                    }
+
+                    String authCookie = Authentication.getInstance().getCookie();
+                    logger.info("Success login request {}", authCookie);
 
                     return 1;
                 } else {
