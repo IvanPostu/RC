@@ -14,12 +14,14 @@ import javax.swing.Timer;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
+import org.apache.http.HttpHost;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -105,11 +107,15 @@ public class LoginPanel extends javax.swing.JPanel {
 
     private String preLoginRequest() {
         String loginCookie = "";
+        HttpGet endpoint = new HttpGet("http://club.chateg.ru");
+        endpoint.setConfig(ConfigWithProxyFactory.getConfig());
+        
         try (CloseableHttpClient client = HttpClients.createDefault();
-                CloseableHttpResponse response = client
-                        .execute(new HttpGet("http://club.chateg.ru"))) {
+                                CloseableHttpResponse response = client
+                        .execute(endpoint)) {
             HttpEntity entity = response.getEntity();
-
+            
+            
             if (entity != null) {
                 byte[] data = IOUtils.readAllBytes(entity.getContent());
                 String strData = new String(data, StandardCharsets.UTF_8);
@@ -134,6 +140,7 @@ public class LoginPanel extends javax.swing.JPanel {
 
     private void loginRequest(String username, String password, String preLoginCookie) {
 
+        
         try (CloseableHttpClient httpclient = HttpClients
                 .custom()
                 .build()) {
@@ -141,7 +148,10 @@ public class LoginPanel extends javax.swing.JPanel {
             String body = String.format("login=%s&pass=%s&action=login", username, password);
             StringEntity stringEntity = new StringEntity(body);
 
+
+            
             HttpUriRequest request = RequestBuilder.post()
+                    .setConfig(ConfigWithProxyFactory.getConfig())
                     .setEntity(stringEntity)
                     .setUri("http://club.chateg.ru/index.php")
                     .setHeader(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded")

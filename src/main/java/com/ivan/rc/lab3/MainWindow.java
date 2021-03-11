@@ -185,6 +185,7 @@ public class MainWindow extends javax.swing.JFrame {
 
             HttpUriRequest request = RequestBuilder.head()
                     .setUri("http://club.chateg.ru/reg.php")
+                    .setConfig(ConfigWithProxyFactory.getConfig())
                     .build();
 
             logger.info("Executing request " + request.getRequestLine());

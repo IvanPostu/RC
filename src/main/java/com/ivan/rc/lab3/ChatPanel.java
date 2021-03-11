@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.stream.Collector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import javax.mail.Message;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import org.apache.http.HttpEntity;
@@ -96,6 +94,7 @@ public class ChatPanel extends javax.swing.JPanel {
                     .setUri(String.format("http://chat.chateg.ru/%s", sufixUrl))
                     .setHeader(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded")
                     .setHeader("Cookie", Authentication.getInstance().getCookie())
+                    .setConfig(ConfigWithProxyFactory.getConfig())
                     .build();
 
             logger.info("Executing request " + request.getRequestLine());
