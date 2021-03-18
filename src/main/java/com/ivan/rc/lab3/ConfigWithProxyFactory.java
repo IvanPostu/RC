@@ -16,7 +16,7 @@ public class ConfigWithProxyFactory {
 
     public static RequestConfig getConfig() {
 
-        HttpHost proxy = new HttpHost("136.233.215.136", 80);
+        HttpHost proxy = new HttpHost("197.248.30.123", 80);
 
         RequestConfig config = RequestConfig.custom()
                 .setProxy(proxy)
