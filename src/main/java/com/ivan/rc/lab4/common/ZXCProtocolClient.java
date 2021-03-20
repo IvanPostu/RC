@@ -16,6 +16,7 @@ import java.util.Map;
 
 import com.ivan.rc.lab4.client.RSA;
 import com.ivan.rc.lab4.server.MainServer;
+import java.util.Arrays;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,12 +66,25 @@ public class ZXCProtocolClient {
             buffer.flush();
 
             log.info(new String(result));
+            String symmetricKey = Arrays.stream(new String(result).split("\n"))
+                    .filter(a -> a.contains("SYMMETRIC_KEY: "))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("SYMMETRIC_KEY in header not found"))
+                    .split(": ")[1];
 
+            RSA rsa = new RSA();
+            byte[] keyAESSymetric = rsa
+                    .decrypt(Base64.getDecoder().decode(symmetricKey), keyPair.getPrivate());
+            String keyAES = new String(keyAESSymetric);
+            
+            pw.close();
+            inStream.close();
+            
+            return keyAES;
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
 
-        return "";
     }
 
 }

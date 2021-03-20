@@ -10,8 +10,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Base64;
 
+import com.ivan.rc.lab4.client.RSA;
 import com.ivan.rc.lab4.common.ZXCProtocolDefinition;
 
 import org.apache.logging.log4j.LogManager;
@@ -52,21 +55,26 @@ public class RequestProcessor implements Runnable {
             String pubKey = Arrays.stream(new String(result).split("\n")).filter(a -> a.contains("PUBLIC_KEY: "))
                     .findFirst().orElseThrow(() -> new RuntimeException("PUBLIK_KEY in header not found"))
                     .split(": ")[1];
-            byte[] pubKeyBytes = pubKey.getBytes();
+            byte[] pubKeyBytes = Base64.getDecoder().decode(pubKey);
 
             String symmetricKey = AES256.generateRandomKey(12);
+            RSA rsa = new RSA();
+            PublicKey pk = rsa.bytesToPublicKey(pubKeyBytes);
+            String encryptedSymmetricKey = new String(Base64.getEncoder().encode(rsa.encrypt(symmetricKey, pk)));
 
             // byte[] cipherTextArray = encrypt(symmetricKey, publicKey);
             // String encryptedText = Base64.getEncoder().encodeToString(cipherTextArray);
 
             PrintWriter pw = new PrintWriter(s.getOutputStream());
-            pw.println(String.format("StatusResponseCode: %s", ZXCProtocolDefinition.StatusResponseCode.SUCCESS));
-            // pw.println(String.format("SYMMETRIC_KEY: %s",
-            // new String(Base64.getEncoder().encode(publicKey.getEncoded()))));
+            pw.println(
+                    String.format("StatusResponseCode: %s", ZXCProtocolDefinition.StatusResponseCode.SUCCESS.name()));
+            pw.println(String.format("SYMMETRIC_KEY: %s", encryptedSymmetricKey));
 
             // pr.println("Yes *");
             pw.flush();
 
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
     }
