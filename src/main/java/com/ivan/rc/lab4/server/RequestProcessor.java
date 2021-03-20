@@ -13,6 +13,9 @@ import java.net.Socket;
 import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import com.ivan.rc.lab4.client.RSA;
 import com.ivan.rc.lab4.common.ZXCProtocolDefinition;
@@ -27,6 +30,7 @@ import org.apache.logging.log4j.Logger;
 public class RequestProcessor implements Runnable {
 
     private static final Logger log = LogManager.getLogger(RequestProcessor.class);
+    private static final Map<String, String> mapWithUserIdsAndSymmetricKeys = new HashMap<>();
 
     private Socket s;
 
@@ -52,31 +56,54 @@ public class RequestProcessor implements Runnable {
             byte[] result = buffer.toByteArray();
             buffer.flush();
 
-            String pubKey = Arrays.stream(new String(result).split("\n")).filter(a -> a.contains("PUBLIC_KEY: "))
-                    .findFirst().orElseThrow(() -> new RuntimeException("PUBLIK_KEY in header not found"))
-                    .split(": ")[1];
-            byte[] pubKeyBytes = Base64.getDecoder().decode(pubKey);
-
-            String symmetricKey = AES256.generateRandomKey(12);
-            RSA rsa = new RSA();
-            PublicKey pk = rsa.bytesToPublicKey(pubKeyBytes);
-            String encryptedSymmetricKey = new String(Base64.getEncoder().encode(rsa.encrypt(symmetricKey, pk)));
-
-            // byte[] cipherTextArray = encrypt(symmetricKey, publicKey);
-            // String encryptedText = Base64.getEncoder().encodeToString(cipherTextArray);
-
             PrintWriter pw = new PrintWriter(s.getOutputStream());
-            pw.println(
-                    String.format("StatusResponseCode: %s", ZXCProtocolDefinition.StatusResponseCode.SUCCESS.name()));
-            pw.println(String.format("SYMMETRIC_KEY: %s", encryptedSymmetricKey));
 
-            // pr.println("Yes *");
+            if (checkIfIsEstablishSecureConnection(new String(result))) {
+                pw.print(establishSecureConnection(result));
+                pw.flush();
+                log.info("Secured connection estabilshed with success.");
+                return;
+            }
+
             pw.flush();
 
+            // log.info();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
+    }
+
+    private boolean checkIfIsEstablishSecureConnection(String requestStr) {
+        try {
+            String reqType = Arrays.stream(requestStr.split("\n")).filter(a -> a.contains("RequestType: ")).findFirst()
+                    .orElseThrow(() -> new RuntimeException()).split(": ")[1];
+
+            return reqType.equals(ZXCProtocolDefinition.RequestType.ESTABLISH_SECURE_CONNECTION.name());
+        } catch (Exception e) {
+            return false;
+        }
+
+    }
+
+    private String establishSecureConnection(byte[] requestBytes) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        String pubKey = Arrays.stream(new String(requestBytes).split("\n")).filter(a -> a.contains("PUBLIC_KEY: "))
+                .findFirst().orElseThrow(() -> new RuntimeException("PUBLIK_KEY in header not found")).split(": ")[1];
+        byte[] pubKeyBytes = Base64.getDecoder().decode(pubKey);
+
+        String symmetricKey = AES256.generateRandomKey(12);
+        RSA rsa = new RSA();
+        PublicKey pk = rsa.bytesToPublicKey(pubKeyBytes);
+        String encryptedSymmetricKey = new String(Base64.getEncoder().encode(rsa.encrypt(symmetricKey, pk)));
+        sb.append(String.format("StatusResponseCode: %s\n", ZXCProtocolDefinition.StatusResponseCode.SUCCESS.name()));
+        sb.append(String.format("SYMMETRIC_KEY: %s\n", encryptedSymmetricKey));
+
+        String userId = UUID.randomUUID().toString();
+        sb.append(String.format("USER_ID: %s\n", userId));
+
+        mapWithUserIdsAndSymmetricKeys.put(userId, symmetricKey);
+        return sb.toString();
     }
 
     @Override

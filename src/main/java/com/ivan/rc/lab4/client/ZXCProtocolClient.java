@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.ivan.rc.lab4.common;
+package com.ivan.rc.lab4.client;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -11,12 +11,12 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.KeyPair;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
 
-import com.ivan.rc.lab4.client.RSA;
+import com.ivan.rc.lab4.common.ZXCProtocolDefinition;
 import com.ivan.rc.lab4.server.MainServer;
-import java.util.Arrays;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,8 +29,6 @@ public class ZXCProtocolClient {
 
     private static final Logger log = LogManager.getLogger(ZXCProtocolClient.class);
 
-    private String body;
-    private ZXCProtocolDefinition.RequestType requestType;
     private KeyPair keyPair;
 
     public void doRequest(ZXCProtocolDefinition.RequestType requestType, String body, Map<String, String> header) {
@@ -38,11 +36,11 @@ public class ZXCProtocolClient {
         RSA rsa = new RSA();
         this.keyPair = rsa.generateKeyPair();
 
-        String z = getSymmetricKeyFromServer();
+        getSymmetricKeyAndUserIdFromServer();
 
     }
 
-    private String getSymmetricKeyFromServer() {
+    private void getSymmetricKeyAndUserIdFromServer() {
 
         try (Socket s = new Socket(InetAddress.getByName(MainServer.SERVER_HOST), MainServer.SERVER_SOCKET_PORT);
                 PrintWriter pw = new PrintWriter(s.getOutputStream())) {
@@ -67,21 +65,27 @@ public class ZXCProtocolClient {
 
             log.info(new String(result));
             String symmetricKey = Arrays.stream(new String(result).split("\n"))
-                    .filter(a -> a.contains("SYMMETRIC_KEY: "))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("SYMMETRIC_KEY in header not found"))
-                    .split(": ")[1];
+                    .filter(a -> a.contains("SYMMETRIC_KEY: ")).findFirst()
+                    .orElseThrow(() -> new RuntimeException("SYMMETRIC_KEY in header not found")).split(": ")[1];
+
+            String userId = Arrays.stream(new String(result).split("\n")).filter(a -> a.contains("USER_ID: "))
+                    .findFirst().orElseThrow(() -> new RuntimeException("USER_ID in header not found")).split(": ")[1];
 
             RSA rsa = new RSA();
-            byte[] keyAESSymetric = rsa
-                    .decrypt(Base64.getDecoder().decode(symmetricKey), keyPair.getPrivate());
+            byte[] keyAESSymetric = rsa.decrypt(Base64.getDecoder().decode(symmetricKey), keyPair.getPrivate());
             String keyAES = new String(keyAESSymetric);
-            
+
             pw.close();
             inStream.close();
-            
-            return keyAES;
+
+            SecuredConnection.getInstance().setAesKey(keyAES);
+            SecuredConnection.getInstance().setUserId(userId);
+            SecuredConnection.getInstance().setEstablished(true);
+            log.info("Secured connection estabilshed for uId: {}", userId);
+            log.info("Symetric key is: {}", keyAES);
+
         } catch (Exception ex) {
+            log.error(ex);
             throw new RuntimeException(ex);
         }
 
