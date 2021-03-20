@@ -6,6 +6,27 @@
   "configurations": [
     {
       "type": "java",
+      "name": "Launch Client",
+      "request": "launch",
+      "mainClass": "com.ivan.rc.other.Client",
+      "projectName": "RC"
+    },
+    {
+      "type": "java",
+      "name": "Launch Server",
+      "request": "launch",
+      "mainClass": "com.ivan.rc.other.Server",
+      "projectName": "RC"
+    },
+    {
+      "type": "java",
+      "name": "Launch MainServer",
+      "request": "launch",
+      "mainClass": "com.ivan.rc.lab4.server.MainServer",
+      "projectName": "RC"
+    },
+    {
+      "type": "java",
       "name": "Launch Test1",
       "request": "launch",
       "mainClass": "com.ivan.rc.test1.Test1",

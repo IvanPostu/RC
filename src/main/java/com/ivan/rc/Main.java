@@ -18,10 +18,11 @@ public class Main {
     private static final Logger logger = LogManager.getLogger(Main.class);
 
     public static void main(String[] args) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
+           java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                logger.info("Run method is called");
-                new MainWindow().setVisible(true);
+                logger.info("Client: main method is called!");
+
+                new com.ivan.rc.lab4.client.MainWindow().setVisible(true);
             }
         });
     }

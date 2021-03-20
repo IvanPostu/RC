@@ -62,3 +62,4 @@ src/main/resources/nativeLibs/*.so
 
 appDB.db
 downloads
+/nbproject/
