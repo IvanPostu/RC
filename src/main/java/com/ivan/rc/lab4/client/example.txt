@@ -1,0 +1,31 @@
+1) Request
+RequestType: ESTABLISH_SECURE_CONNECTION
+PUBLIK_KEY: <base64 public RSA key >
+
+1) Response
+StatusResponseCode: SUCCESS
+SYMMETRIC_KEY: <enctypred with RSA public key - symmetric AES key>
+USER_ID: <userid>
+
+
+
+2) Request (add message)
+RequestType: EXTENDED
+ACTION: SET_MESSAGE
+UserId: <userid>
+Data: <encrypted with AES symmetric key>
+
+2) Response
+StatusResponseCode: SUCCESS | ERROR
+Data: <encrypted messages with AES algorithm>
+
+
+3) Request (get messages)
+RequestType: EXTENDED
+ACTION: GET_MESSAGES
+UserId: <userid>
+Data: <empty>
+
+2) Response
+StatusResponseCode: SUCCESS | ERROR
+Data: <encrypted messages with AES algorithm>
