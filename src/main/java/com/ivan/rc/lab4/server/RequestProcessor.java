@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.ivan.rc.lab4.client.RSA;
@@ -38,17 +39,26 @@ public class RequestProcessor implements Runnable {
         this.s = s;
     }
 
+    @Override
+    public void run() {
+        try {
+            processRequest();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     private void processRequest() throws IOException {
 
         try (InputStream in = s.getInputStream()) {
 
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            byte[] data = new byte[2048];
+            byte[] dataBuffer = new byte[2048];
             int nRead;
             while (true) {
-                nRead = in.read(data, 0, data.length);
-                buffer.write(data, 0, nRead);
-                if (nRead != data.length) {
+                nRead = in.read(dataBuffer, 0, dataBuffer.length);
+                buffer.write(dataBuffer, 0, nRead);
+                if (nRead != dataBuffer.length) {
                     break;
                 }
             }
@@ -61,13 +71,27 @@ public class RequestProcessor implements Runnable {
             if (checkIfIsEstablishSecureConnection(new String(result))) {
                 pw.print(establishSecureConnection(result));
                 pw.flush();
-                log.info("Secured connection estabilshed with success.");
                 return;
             }
 
+            String action = this.extractAction(result).orElse("");
+
+            String uId = Arrays.stream(new String(result).split("\n")).filter(a -> a.contains("UserId: ")).findFirst()
+                    .orElseThrow(() -> new RuntimeException()).split(": ")[1];
+
+            String encryptedData = Arrays.stream(new String(result).split("\n")).filter(a -> a.contains("Data: "))
+                    .findFirst().orElseThrow(() -> new RuntimeException()).split(": ")[1];
+
+            String aesKey = mapWithUserIdsAndSymmetricKeys.get(uId);
+            AES256 aes = new AES256();
+            String plainData = aes.decrypt(encryptedData, aesKey);
+
+            BusinessLogic.getInstance().processAction(action, plainData, uId, pw, aesKey);
+            pw.write(
+                    String.format("StatusResponseCode: %s\n", ZXCProtocolDefinition.StatusResponseCode.SUCCESS.name()));
+
             pw.flush();
 
-            // log.info();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -103,15 +127,20 @@ public class RequestProcessor implements Runnable {
         sb.append(String.format("USER_ID: %s\n", userId));
 
         mapWithUserIdsAndSymmetricKeys.put(userId, symmetricKey);
+        log.info("Secured connection estabilshed with success for uId: {}, hashcode: {}", userId, userId.hashCode());
+
         return sb.toString();
     }
 
-    @Override
-    public void run() {
+    private Optional<String> extractAction(byte[] requestBytes) {
         try {
-            processRequest();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            String action = Arrays.stream(new String(requestBytes).split("\n")).filter(a -> a.contains("Action: "))
+                    .findFirst().orElse(null).split(": ")[1];
+
+            return Optional.ofNullable(action);
+        } catch (Exception e) {
+            log.error("IN extractAction: Action not found");
+            return Optional.ofNullable(null);
         }
     }
 

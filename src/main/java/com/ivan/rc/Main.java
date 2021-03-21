@@ -1,7 +1,7 @@
 package com.ivan.rc;
 
 import com.ivan.rc.configuration.Log4jConfiguration;
-import com.ivan.rc.lab3.MainWindow;
+import com.ivan.rc.lab4.client.MainWindow;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,7 +22,7 @@ public class Main {
             public void run() {
                 logger.info("Client: main method is called!");
 
-                new com.ivan.rc.lab4.client.MainWindow().setVisible(true);
+                MainWindow.getInstance().setVisible(true);
             }
         });
     }
