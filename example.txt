@@ -10,7 +10,7 @@ USER_ID: <userid>
 
 
 2) Request (add message)
-RequestType: EXTENDED
+RequestType:  
 ACTION: SET_MESSAGE
 UserId: <userid>
 Data: <encrypted with AES symmetric key>

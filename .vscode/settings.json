@@ -98,8 +98,8 @@
   "editor.insertSpaces": true,
   "breadcrumbs.enabled": true,
   "terminal.integrated.fontFamily": "monospace",
-  "terminal.integrated.fontSize": 10,
-  "debug.console.fontSize": 10,
+  "terminal.integrated.fontSize": 13,
+  "debug.console.fontSize": 13,
   "debug.console.lineHeight": 12,
   "debug.console.fontFamily": "monospace",
   "[Log]": {
